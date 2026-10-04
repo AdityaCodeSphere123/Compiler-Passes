@@ -23,7 +23,7 @@ static unsigned power_2(Value* val){
 
 struct StrengthReducePass: PassInfoMixin<StrengthReducePass>{
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &){
-    // collect first
+    // collect
     std::vector<Instruction*> muls;
     for(BasicBlock &bb:F){
       for(Instruction &inst:bb){
@@ -38,20 +38,21 @@ struct StrengthReducePass: PassInfoMixin<StrengthReducePass>{
     for(Instruction *mul :muls){
       Value *lhs = mul->getOperand(0);
       Value *rhs = mul->getOperand(1);
-      unsigned k = power_2(rhs); // mul x,8
+      // mul x,8
+      unsigned k = power_2(rhs); 
       Value *base = lhs;
       if(k == 0){
-        k = power_2(lhs); // mul 16,x
+        // mul 16,x
+        k = power_2(lhs);
         base = rhs;
       }
       if(k == 0){
         continue;
       }
 
-      // keep the same width as the mul
       auto *amt = ConstantInt::get(mul->getType(),k);
       auto *shl = BinaryOperator::Create(Instruction::Shl,base,amt);
-      //flags
+      
       shl->setHasNoUnsignedWrap(mul->hasNoUnsignedWrap());
       shl->setHasNoSignedWrap(mul->hasNoSignedWrap());
       shl->insertBefore(mul->getIterator());
